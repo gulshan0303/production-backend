@@ -1,0 +1,37 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Code ko runner pe laana
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Node environment setup
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # 3. Dependencies install
+      - name: Install dependencies
+        run: npm install
+
+      # 4. TypeScript build
+      - name: Build project
+        run: npm run build
+
+      - name: Run Lint
+        run: npx eslint . || true
+        
+      - name: Run Tests
+        run: echo "No tests yet"
+
+      - name: Build Docker Image
+        run: docker build -t production-backend .
