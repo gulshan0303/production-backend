@@ -33,8 +33,8 @@ services:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
-      retries: 10          # ← increased a bit
-      start_period: 8s     # ← very helpful: gives postgres time to boot before healthcheck even starts
+      retries: 10         
+      start_period: 8s   
 
 networks:
   app-network:
