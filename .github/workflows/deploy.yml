@@ -9,46 +9,37 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout code
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 2. Setup Node
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 18   # ✅ stable
+          node-version: 18
 
-      # 3. Install dependencies
       - name: Install dependencies
         run: npm install
 
-      # 4. Build project
       - name: Build project
         run: npm run build
 
-      # 5. Debug (temporary - remove later)
       - name: Debug Docker Username
         run: echo "Docker Username: ${{ secrets.DOCKER_USERNAME }}"
 
-      # 6. Login to DockerHub (FIRST)
       - name: Login DockerHub
         run: |
           echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-      # 7. Build Docker Image
       - name: Build Image
         run: |
           docker build \
             -t "${{ secrets.DOCKER_USERNAME }}/backend:${{ github.sha }}" \
             .
 
-      # 8. Push Docker Image
       - name: Push Image
         run: |
           docker push "${{ secrets.DOCKER_USERNAME }}/backend:${{ github.sha }}"
 
-      # 9. Deploy to EC2
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
