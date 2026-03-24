@@ -18,7 +18,7 @@ app.use(errorHandler);
 
 
 app.get("/health", (req, res) => {
-  res.json({ status: "OK" });
+  res.json({ status: "OK" ,version:"v1"});
 });
 
 export default app;
