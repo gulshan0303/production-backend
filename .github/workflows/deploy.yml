@@ -1,0 +1,66 @@
+name: Auto Deploy Backend
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Code pull
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2. Node setup
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # 3. Install deps
+      - run: npm install
+
+      # 4. Build
+      - run: npm run build
+
+      # 5. Build Docker Image (versioned)
+      - name: Build Image
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/backend:${{ github.sha }} .
+
+      # 6. Login Docker
+      - name: Login DockerHub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      # 7. Push Image
+      - name: Push Image
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/backend:${{ github.sha }}
+
+      # 8. Deploy to EC2
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            docker pull ${{ secrets.DOCKER_USERNAME }}/backend:${{ github.sha }}
+
+            docker stop backend || true
+            docker rm backend || true
+
+            docker run -d -p 5000:5000 \
+              --name backend \
+              --network app-network \
+              -e DB_HOST=postgres \
+              -e DB_PORT=5432 \
+              -e DB_USER=postgres \
+              -e DB_PASSWORD=postgres \
+              -e DB_NAME=learn-docker \
+              -e JWT_SECRET=secret \
+              ${{ secrets.DOCKER_USERNAME }}/backend:${{ github.sha }}
+
+            sleep 5
+
+            curl -f http://localhost:5000/health || exit 1
